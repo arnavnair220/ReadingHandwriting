@@ -33,16 +33,23 @@ class NeuralNetwork:
         self.second_layer_weights = self.second_layer_weights - learningRate * secondLayerWeightsDifference
         self.second_layer_biases = self.second_layer_biases - learningRate * secondLayerBiasesDifference
 
+    def getWeightsNBiases(self):
+        return self.first_layer_weights, self.first_layer_biases, self.second_layer_weights, self.second_layer_biases
+
 #creates layers
-def forwardProp(inputData, neuralNetwork):
+def forwardProp(neuralNetwork):
     #create first layer
-    toBeSigmoided = neuralNetwork.first_layer_weights.dot(inputData)+neuralNetwork.first_layer_biases
+    toBeSigmoided = neuralNetwork.first_layer_weights.dot(neuralNetwork.pixelValues)+neuralNetwork.first_layer_biases
     firstLayer = sigmoid_function(toBeSigmoided)
     #create second layer
-    toBeSoftmaxed = neuralNetwork.second_layer_weights.dot(inputData)+neuralNetwork.second_layer_biases
+    toBeSoftmaxed = neuralNetwork.second_layer_weights.dot(neuralNetwork.pixelValues)+neuralNetwork.second_layer_biases
     secondLayer = softmax_function(toBeSoftmaxed)
 
     return toBeSigmoided, firstLayer, toBeSoftmaxed, secondLayer
+
+#used on inputted data after weights and biases
+def sigmoid_function(inputMatrix):
+    return 1/(1 + numpy.exp(-inputMatrix))
 
 def backProp(neuralNetwork, toBeSigmoided, firstLayer, toBeSoftmaxed, secondLayer):
     #find error in second layer's weights and biases
@@ -57,23 +64,34 @@ def backProp(neuralNetwork, toBeSigmoided, firstLayer, toBeSoftmaxed, secondLaye
 
     return secondLayerWeightsDifference, secondLayerBiasesDifference, firstLayerWeightsDifference, firstLayerBiasesDifference
 
-def gradient_descent(neuralNetwork, pixelValues, labels, iterations, learningRate):
-    for i in range(iterations):
-        toBeSigmoided, firstLayer, toBeSoftmaxed, secondLayer = forwardProp(neuralNetwork, )
-        
-
-#used on inputted data after weights and biases
-def sigmoid_function(inputMatrix):
-    return None
-
 #used on first layer output after weights and biases
 def softmax_function(inputMatrix):
-    return exp(inputMatrix)/(numpy.sum(exp(inputMatrix)))
+    return numpy.exp(inputMatrix)/(numpy.sum(numpy.exp(inputMatrix)))
+
+def sigmoidDerivative(inputMatrix):
+    return sigmoid_function(inputMatrix) * (1-sigmoid_function(inputMatrix))
 
 def createCorrectAnswerVector(labels):
     correctAnswerVector = numpy.zeros((labels.size, labels.max()+1))
     correctAnswerVector[numpy.arrange(labels.size), labels] = 1
     return correctAnswerVector.T
 
-def sigmoidDerivative(inputMatrix):
-    return None
+def gradient_descent(neuralNetwork, iterations, learningRate):
+    for i in range(iterations):
+        toBeSigmoided, firstLayer, toBeSoftmaxed, secondLayer = forwardProp(neuralNetwork)
+        secondLayerWeightsDifference, secondLayerBiasesDifference, firstLayerWeightsDifference, firstLayerBiasesDifference = backProp(neuralNetwork,toBeSigmoided, firstLayer, toBeSoftmaxed, secondLayer)
+        neuralNetwork.fixWeightsNBiases(learningRate, secondLayerWeightsDifference, secondLayerBiasesDifference, firstLayerWeightsDifference, firstLayerBiasesDifference)
+    return neuralNetwork.getWeightsNBiases()
+
+
+
+
+def main():
+    neuralNetwork = neuralNetwork()
+    neuralNetwork.loadData("mnist_train.csv")
+
+    gradient_descent(neuralNetwork, 100, .1)
+
+
+if __name__ == "__main__":
+    main()
